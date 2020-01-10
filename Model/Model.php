@@ -106,18 +106,32 @@ abstract class Model implements ModelInterface
             implode(',', static::$saved_fields), implode(',', $clauses));
         $stmt = self::$connection->prepare($query);
         $stmt->execute($values);
-
     }
 
     public function update()
     {
         self::preRequest();
 
+        if (is_null(static::$saved_fields)) {
+            throw new \Exception("Table fields is not set");
+        }
+
+        $clauses = [];
+        $values = [];
+        foreach (static::$saved_fields as $field) {
+            $values[$field] = !is_null($this->{$field}) ? $this->{$field} : null;
+            $clauses[] = "{$field} = :{$field}";
+        }
+        $values['id'] = $this->id;
+        $query = sprintf("update %s set %s where id = :id", static::$table_name, implode(',', $clauses));
+        $stmt = self::$connection->prepare($query);
+        $stmt->execute($values);
     }
 
     public function remove()
     {
         self::preRequest();
+        //Операции такой не было в задании, но без этой функции интерфейс выглядит неполным
     }
 
 }
